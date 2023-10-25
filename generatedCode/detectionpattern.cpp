@@ -725,8 +725,26 @@ int    e(int  p0, std::string   p1, std::string   p2)
 	exec_start.reset_clock();
 	if(exists_DetectionPatterne_userId(p0, p1, p2))
 	{
-		if(((exists_detectorse_d(p0, p1, p2, ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d) || (ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_majorityVote.autState == S0 && p0 == ts_DetectionPattern.userId )) || (ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_Data_Parser.autState == S0 && p0 == ts_DetectionPattern.userId )))
+		if(((exists_detectorse_d(p0, p1, p2, ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d) 
+		|| (ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_majorityVote.autState == S0 
+		&& p0 == ts_DetectionPattern.userId )) 
+		|| (ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_Data_Parser.autState == S0 
+		&& p0 == ts_DetectionPattern.userId )))
 		{
+			if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_Data_Parser.autState == S0 && p0 == ts_DetectionPattern.userId ))
+			{
+				if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_Data_Parser.autState == S0 && p0 == ts_DetectionPattern.userId ))
+				{
+					Code::formatting_data(ts_DetectionPattern.f[ts_DetectionPattern.userId].data,ts_DetectionPattern.f[ts_DetectionPattern.userId].sliding_window,p1);ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.right_clock_Data_Parser.reset_clock();ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_Data_Parser.autState = S0;
+					exec = 1;
+				
+				}
+			
+			}
+			if(exec)
+			{
+				ts_DetectionPattern.f[ts_DetectionPattern.userId].left_clock_CombineModels.reset_clock();
+			}
 			if((exists_detectorse_d(p0, p1, p2, ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d) || (ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_majorityVote.autState == S0 && p0 == ts_DetectionPattern.userId )))
 			{
 				if(exists_detectorse_d(p0, p1, p2, ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d))
@@ -745,21 +763,22 @@ int    e(int  p0, std::string   p1, std::string   p2)
 								ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_training.autState = S0;
 							
 							}
-							if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_scoring.autState == S0 && p0 == ts_DetectionPattern.userId ))
-							{
-								if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_scoring.autState == S0 && p0 == ts_DetectionPattern.userId ))
-								{
-									ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.mapdetectors[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d]->score_partial(p1,p2,ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.scores);ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].left_clock_scoring.reset_clock();ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_scoring.autState = S0;
-									exec = 1;
-								
-								}
 							
-							}
 							if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_training.autState == S0 && p0 == ts_DetectionPattern.userId ))
 							{
 								if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_training.autState == S0 && p0 == ts_DetectionPattern.userId ))
 								{
 									ts_DetectionPattern.f[ts_DetectionPattern.userId].sliding_window->fit_partial(ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.mapdetectors[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d],ts_DetectionPattern.f[ts_DetectionPattern.userId].data);ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].right_clock_training.reset_clock();ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_training.autState = S0;
+									exec = 1;
+								
+								}
+							
+							}
+							if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_scoring.autState == S0 && p0 == ts_DetectionPattern.userId ))
+							{
+								if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_scoring.autState == S0 && p0 == ts_DetectionPattern.userId ))
+								{
+									ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.mapdetectors[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d]->score_partial(p1,p2,ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.scores);ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].left_clock_scoring.reset_clock();ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.f[ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_combination.ts_detectors.d].ts_scoring.autState = S0;
 									exec = 1;
 								
 								}
@@ -790,20 +809,6 @@ int    e(int  p0, std::string   p1, std::string   p2)
 					ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.left_clock_combination.reset_clock();
 				}
 			
-			}
-			if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_Data_Parser.autState == S0 && p0 == ts_DetectionPattern.userId ))
-			{
-				if((ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_Data_Parser.autState == S0 && p0 == ts_DetectionPattern.userId ))
-				{
-					Code::formatting_data(ts_DetectionPattern.f[ts_DetectionPattern.userId].data,ts_DetectionPattern.f[ts_DetectionPattern.userId].sliding_window,p1);ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.right_clock_Data_Parser.reset_clock();ts_DetectionPattern.f[ts_DetectionPattern.userId].ts_CombineModels.ts_Data_Parser.autState = S0;
-					exec = 1;
-				
-				}
-			
-			}
-			if(exec)
-			{
-				ts_DetectionPattern.f[ts_DetectionPattern.userId].left_clock_CombineModels.reset_clock();
 			}
 		
 		}
