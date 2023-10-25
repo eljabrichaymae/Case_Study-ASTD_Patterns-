@@ -1,3 +1,5 @@
+#include <chrono>
+#include <ctime>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -279,5 +281,43 @@ public:
         }
      
         return e;
+    }
+};
+/*
+* @brief Manages clock variables.
+*
+*/
+class Timer {
+private:
+        std::time_t time_stamp;
+
+public:
+    //constructor definition
+    Timer(){
+        time_stamp = std::chrono::duration_cast<std::chrono::nanoseconds>((std::chrono::system_clock::now().time_since_epoch())).count();
+    }
+
+    bool expired(double duration){
+        return (std::chrono::duration_cast<std::chrono::nanoseconds>((std::chrono::system_clock::now().time_since_epoch())).count() >= time_stamp + duration);
+    }
+
+    std::time_t getPassedTime(){
+        return (std::chrono::duration_cast<std::chrono::nanoseconds>((std::chrono::system_clock::now().time_since_epoch())).count() - time_stamp);
+    }
+
+    std::time_t getTimeStamp(){
+        return time_stamp;
+    }
+
+    void reset_clock(){
+        time_stamp = std::chrono::duration_cast<std::chrono::nanoseconds>((std::chrono::system_clock::now().time_since_epoch())).count();
+    }
+
+    void reset_clock(Timer ts){
+        time_stamp = ts.getTimeStamp();
+    }
+
+    void setTimeStamp(){
+
     }
 };

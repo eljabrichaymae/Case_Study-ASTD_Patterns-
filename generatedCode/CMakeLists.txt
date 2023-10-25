@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.18)
-project(COMBINEMODELS)
+project(DETECTIONPATTERN)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(Python3  COMPONENTS Interpreter Development Development.Module NumPy)
-add_executable(COMBINEMODELS    combinemodels.cpp
+add_executable(DETECTIONPATTERN   detectionpattern.cpp
                                     Code.cpp 
                                     ${PROJECT_SOURCE_DIR}/learning_models/KDE/kde.cpp 
                                     ${PROJECT_SOURCE_DIR}/window/window.cpp
                                     ${PROJECT_SOURCE_DIR}/learning_models/KMEANS/kmeans.cpp
                                     ${PROJECT_SOURCE_DIR}/learning_models/LOF/lof.cpp )
 include_directories(${PYTHON_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
-target_link_libraries(COMBINEMODELS PRIVATE Python3::Python PRIVATE Python3::NumPy)
-target_include_directories(COMBINEMODELS PUBLIC
+target_link_libraries(DETECTIONPATTERN PRIVATE Python3::Python PRIVATE Python3::NumPy)
+target_include_directories(DETECTIONPATTERN PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            "${Python_NumPy_INCLUDE_DIRS}"
                            "${PROJECT_SOURCE_DIR}/learning_models"
