@@ -18,12 +18,12 @@ $ make
 ## Execution
 
 ```console
-$ ./COMBINEMODELS -i <path_to_trace> -1 <window_parameters> -2 <kde_parameters> -3 <kmeans_parameters> -4 <lof_parameters>
+$ ./DETECTIONPATTERN -i <path_to_trace> -1 <window_parameters> -2 <kde_parameters> -3 <kmeans_parameters> -4 <lof_parameters>
 ```
 ## Execution example
 
 ```console
-$ ./COMBINEMODELS -i ../traces/astd3559trace.txt -1 ../inputs/window_parameters.json -2 0.0001 -3 2 -4 20
+$ ./DETECTIONPATTERN -i ../traces/astd3559trace.txt -1 ../inputs/window_parameters.json -2 0.0001 -3 2 -4 20
 ```
 
 ```plaintext
