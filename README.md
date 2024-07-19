@@ -6,7 +6,7 @@ In this project, we present a generic ASTD specification for combining a set of 
 
 We utilize three heterogeneous learning models, which are:
 
-- **K-means**: A clustering algorithm for batch learning adapted to circular data. The number of clusters used is optimized using the silhouette coefficient. The distance used for clustering refers to the time interval between two events occurring at different minutes, denoted as \(a\) and \(b\). The formula to compute this distance is as follows:
+- **K-means**: A clustering algorithm for batch learning adapted to circular data. The number of clusters used is optimized using the silhouette coefficient. The distance used for clustering refers to the time interval between two events occurring at different hours, denoted as \(a\) and \(b\). The formula to compute this distance is as follows:
    ```markdown
   distance(a,b) = 
   {
