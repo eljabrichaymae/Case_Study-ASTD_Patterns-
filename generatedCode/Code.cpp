@@ -10,7 +10,10 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include "json.hpp"
+#include "nlohmann/json.hpp"
+#include <sstream>
+#include <iomanip>
+#include <ctime>
 
 
 
@@ -18,60 +21,73 @@ using namespace std;
 using json = nlohmann::json;
 
 class Code{
+     static constexpr unsigned int days_to_month[2][12] = {
+        // non-leap year
+        { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 },
+        // leap year
+        { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 },
+    };
+
+   static constexpr unsigned int days_of_month[2][12] = {
+        // non-leap year
+        { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+        // leap-year
+        { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+    };
     public:
-        static unsigned int num_day(unsigned int const day, unsigned int const month, unsigned int const year ){
-            static const unsigned int days_to_month[2][12] =
-            {
-                // non-leap year
-                { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 },
-                // leap year
-                { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 },
-            };
-            static const unsigned int days_of_month[2][12] = 
-            {
-                // non-leap year
-                { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
-                // leap-year
-                { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
-            };
-            auto leap = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0));
-            return days_to_month[leap][month - 1] + day;
-        };
-        static int num_week(int j, int m, int a){ 
-            int s = 0;
-            struct tm tmj = {0, 0, 12, 1, 0, a - 1900, 0, 0, 0};     //1er Janv
-            struct tm tmq = {0, 0, 12, j, m - 1, a - 1900, 0, 0, 0}; //date
+    static bool is_leap_year(unsigned int year) {
+        return (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0));
+    }
 
-            if (mktime(&tmj) != (time_t)-1 && mktime(&tmq) != (time_t)-1){
-                if (!(s = (tmj.tm_wday + tmq.tm_yday + 6) / 7 - (tmj.tm_wday / 5)))
-                    s = num_week(31, 12, a - 1);
+    static unsigned int num_day(unsigned int day, unsigned int month, unsigned int year) {
+        auto leap = is_leap_year(year);
+        return days_to_month[leap][month - 1] + day;
+    }
 
-            if (m == 12){
-                int js = (tmj.tm_wday + tmq.tm_yday) % 7;
-                if ((js == 1 && (j >= 29 && j <= 31)) || (js == 2 && (j == 30 || j == 31)) || (js == 3 && j == 31))
-                s = 1;
-                }
+    static int num_week(int day, int month, int year) {
+        struct tm tm_start_year = {0, 0, 12, 1, 0, year - 1900, 0, 0, 0}; // 1st Jan
+        struct tm tm_date = {0, 0, 12, day, month - 1, year - 1900, 0, 0, 0}; // given date
+
+        if (mktime(&tm_start_year) != (time_t)-1 && mktime(&tm_date) != (time_t)-1) {
+            int days_since_start = tm_date.tm_yday - tm_start_year.tm_yday;
+            int weeks_since_start = (tm_start_year.tm_wday + days_since_start + 6) / 7;
+            if (tm_start_year.tm_wday == 0) {
+                weeks_since_start++;
             }
-            return s;
-        };
-        static int compute_period(std::string eventDate, std::string period_type){
-            int day = stoi(eventDate.substr(9, 2));
-            int month = stoi(eventDate.substr(6, 2));
-            int year = stoi(eventDate.substr(1, 4));
-            int period = 0;
-            if(period_type == "week"){
-                int numsemaine = num_week(day, month, year);
-                if (month == 12 && numsemaine == 1)
-                    year = year + 1;
-                else if (month == 1 && (numsemaine == 52 || numsemaine == 53))
-                    year = year - 1;
-                period = year * 100 + numsemaine;
-            }else if(period_type == "day"){
-                int numday = num_day(day, month, year);
-                period = year * 1000 + numday;
+            return weeks_since_start;
+        }
+        return 0;
+    }
+
+    static int compute_period(const std::string& eventDate, const std::string& period_type) {
+        std::tm tm = {};
+        std::istringstream ss(eventDate);
+        ss >> std::get_time(&tm, "%d/%m/%Y %H:%M:%S");
+
+        if (ss.fail()) {
+            throw std::runtime_error("Invalid date format");
+        }
+
+        int day = tm.tm_mday;
+        int month = tm.tm_mon + 1;
+        int year = tm.tm_year + 1900;
+        int period = 0;
+
+        if (period_type == "week") {
+            int week_num = num_week(day, month, year);
+            if (month == 12 && week_num == 1) {
+                year += 1;
+            } else if (month == 1 && (week_num == 52 || week_num == 53)) {
+                year -= 1;
             }
-            return period;
-        };
+            period = year * 100 + week_num;
+        } else if (period_type == "day") {
+            int day_num = num_day(day, month, year);
+            period = year * 1000 + day_num;
+        }
+
+        return period;
+    }
 
         static std::map<string, model*> init_map(double kde_parameters, double kmeans_parameters, int lof_parameters){
             std::map<string, model*> map_classes;
@@ -82,12 +98,19 @@ class Code{
             return map_classes;
         };
         static void formatting_data(std::map<int,std::vector<int>> &data, window1* window,std::string eventDate){
-            int heure = stoi(eventDate.substr(12, 2));
-            int minute = stoi(eventDate.substr(15, 2));
-            int value = heure * 60 + minute;
+              // Définir un objet de type std::tm pour stocker la date et l'heure
+            std::tm tm = {};
+
+            // Utiliser std::istringstream pour lire la chaîne de caractères
+            std::istringstream ss(eventDate);
+            ss >> std::get_time(&tm, "%d/%m/%Y %H:%M:%S");
+            std::time_t time = std::mktime(&tm);
+            int value = tm.tm_hour;
             std::string type = window->getType();
+      
             if(type == "day"||type == "week"){
                 int period = compute_period(eventDate,type);
+             
                 data[period].push_back(value);
                 std::vector<int> periodsToDelete = window->add_period(period);
                 if(periodsToDelete.size() != 0 ){
@@ -104,28 +127,46 @@ class Code{
                 if(sliding_on == 1) {
                     data[0] = vector<int>(data[0].begin()+slide_size,data[0].end());
                 }
-            }
-            
+            }   
         };
-        static void majorityVote(std::vector<int>& labels, std::vector<tuple<string,int,string>>& alerts, string eventId, string eventDate){
-            if(labels.size() != 0){
-                int count =0; 
-                for(int i=0;i< labels.size();i++){
+
+        static void majorityVote(vector<int>& labels, vector<tuple<string, int, string>>& alerts, string eventId, string eventDate, int label, int scenario) {
+               
+                if(labels.size() == 3 && labels.size()!=0) { // Ensure we have exactly 3 elements (scores from kde, kmeans, lof)
+                int count = 0; 
+                for(int i = 0; i < labels.size(); i++) {
                     if(labels[i] == 1) count++;
-                    
                 }
-                if(count>=2){
-                    alerts.push_back(make_tuple(eventId,count,eventDate));
-                    cout<<eventId<<"is malicious"<<endl;
+
+                int combinedScore = (count >= 2) ? 1 : 0;
+                if(combinedScore == 1) {
+                    alerts.push_back(make_tuple(eventId, count, eventDate));
+                    //cout << eventId << " is malicious" << endl;
                 }
+                
+                // Create JSON object for the event
+                json eventJson;
+                eventJson["eventId"] = eventId;
+                eventJson["kmeans_score"] = labels[0];
+                eventJson["kde_score"] = labels[1];
+                eventJson["lof_score"] = labels[2];
+                eventJson["combined_score"] = combinedScore;
+                eventJson["label"] = label;
+                eventJson["scenario"] = scenario;
+
+                // Write JSON object to a file
+                ofstream file("events.json", ios::app);
+                if (file.is_open()) {
+                    file << eventJson.dump() << endl;
+                    file.close();
+                } else {
+                    cerr << "Unable to open file for writing." << endl;
+                }
+
                 labels.clear();
+            } else {
+               // cerr << "Labels vector does not have exactly 3 elements." << endl;
             }
-        };
+        }
 
-
-
-
-
-
-
-};
+    };

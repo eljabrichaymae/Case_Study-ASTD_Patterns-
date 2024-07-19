@@ -37,8 +37,8 @@ class kmeans : public model {
         void setNumClusters(int);       
         std::vector<std::string> getAlerts();
         double distance(double a, double b);
-        void training(std::vector<int> data);
-        void score_partial(std::string,std::string,std::vector<int>&);
+        void training(PyObject* result);
+        void detection(std::string,std::string,std::vector<int>&);
         ~kmeans();
 };
 

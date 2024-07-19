@@ -8,7 +8,10 @@
 #include <Python.h>
 #include "numpy/arrayobject.h"                  
 #include <cmath>
-#include "../../json.hpp"
+#include "../../nlohmann/json.hpp"
+#include <sstream>
+#include <iomanip>
+#include <ctime>
 
 
 using json = nlohmann::json;
@@ -17,7 +20,7 @@ using namespace std;
 kmeans::kmeans(){
     this->risInitialized = 0;
     this->numClusters=0;
-    this->threshold = 2;
+    this->threshold = 1.75;
 };
 kmeans::kmeans(double threshold){
     this->risInitialized = 0;
@@ -64,15 +67,12 @@ std::vector<std::string> kmeans::getAlerts(){
     return this->alerts;
 };
 double kmeans::distance(double a, double b){
-    if(a<b) return std::min(b-a, a-b+1440);
-    else return std::min(a-b, b-a+1440);
+    if(a<b) return std::min(b-a, a-b+24);
+    else return std::min(a-b, b-a+24);
 }
 
-void kmeans::training(std::vector<int> data){
-    PyObject* result = PyList_New(0);
-    for (int i = 0; i < data.size(); i++) {
-        PyList_Append(result, PyLong_FromLong(data[i]));
-    }
+void kmeans::training(PyObject* result){
+    
     PyObject *pName, *pModule, *pFunc, *pArgs;
     PyObject *pValue;
     pName = PyUnicode_FromString((char*)"pyKmeans");
@@ -97,38 +97,68 @@ void kmeans::training(std::vector<int> data){
     PyArrayObject *second_array = reinterpret_cast<PyArrayObject*>(second_obj);
     int first_len = PyArray_SHAPE(first_array)[0];
     int second_len = PyArray_SHAPE(second_array)[0];
+    //cout<<first_len<<endl;
+    //cout<<second_len<<endl;
     double *first_tab= reinterpret_cast<double*>(PyArray_DATA(first_array));
     double *second_tab= reinterpret_cast<double*>(PyArray_DATA(second_array));
     std::vector<double> pycenters(first_tab,first_tab+first_len);
+    //cout<<pycenters.size()<<endl;
     std::vector<double> pyStdvars(second_tab,second_tab+second_len);
     setStdvars(pyStdvars);
     setCenters(pycenters);
+    //
     Py_DECREF(pName);
     Py_DECREF(pModule);
     Py_DECREF(pFunc);
     Py_DECREF(pArgs);
 
+
+
+       // } catch(std::exception& ex) {
+        //std::cerr << "Exception caught: " << ex.what() << std::endl;
+        //} catch(...) {
+       //std::cerr << "Unknown exception caught" << std::endl;
+        //}
+
 };
-void kmeans::score_partial(std::string eventDate,std::string eventId, std::vector<int>& labels){
-    if(getCenters().size()!=0){
-        int heure = stoi(eventDate.substr(12, 2));
-        int minute = stoi(eventDate.substr(15, 2));
-        int value = heure * 60 + minute;
+
+
+void kmeans::detection(std::string eventDate, std::string eventId, std::vector<int>& labels) {
+     if (getCenters().size() != 0) {
+        std::tm tm = {};
+        // Utiliser std::istringstream pour lire la chaîne de caractères
+        std::istringstream ss(eventDate);
+        ss >> std::get_time(&tm, "%d/%m/%Y %H:%M:%S");
+        std::time_t time = std::mktime(&tm);    
+        int value = tm.tm_hour;// Extract hour part from the eventDate string
+        
         std::vector<double> distances;
-        for(double c : getCenters()){
-            double dist = distance(c,value);
+        for (double c : getCenters()) {
+            double dist = distance(c, value);
+            
             distances.push_back(dist);
         }
-        std::vector<double>::iterator it_score = std::min_element(distances.begin(),distances.end());
+        auto it_score = std::min_element(distances.begin(), distances.end());
         int index_val_cluster = it_score - distances.begin();
         double stdvar = this->stdvars[index_val_cluster];
-        double zscore = *it_score/stdvar;
-        if(abs(zscore) > getThreshold()){
-            this->alerts.push_back(eventId);
-            labels.push_back(1);
-        }else{
-            labels.push_back(0);
+        if (abs(stdvar) != 0) { 
+
+            double zscore = *it_score / std::abs(stdvar);
+            if (std::abs(zscore) >= getThreshold()) {
+                labels.push_back(1);
+            } else {
+                labels.push_back(0);
+            }
+        } else {
+            if(abs(*it_score)>= 1){
+                labels.push_back(1);
+            }else{
+                labels.push_back(0);
+            }
+                
+
         }
+        
     }
 };
 kmeans::~kmeans(){

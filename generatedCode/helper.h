@@ -1,5 +1,3 @@
-#include <chrono>
-#include <ctime>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -17,9 +15,9 @@
  * @brief Regex expresssion used to parse
  *            event labels and parameters 
  */
-#define LABEL_REGEX std::string("([0-9a-zA-Z*+_]*)")
+#define LABEL_REGEX std::string("([a-z_A-z]+[0-9]*)")
 #define PARAMS_REGEX std::string(LABEL_REGEX + "\\((.*)\\)")
-#define SEPARATE_PARAMS_REGEX std::string("(\".*?\"|[^\",]+)(?=\\s*,|\\s*$)")
+#define SEPARATE_PARAMS_REGEX R"((\"[^\"]*\"|[^,]+))"
 /*
  * @brief Safely executes events by catching exceptions
  *     
@@ -123,23 +121,18 @@ public:
      * @param The input regex to be used for parsing
      * @return 
      */
-    static void get_event_params(Event& e, const std::string in) 
+   static void get_event_params(Event& e, const std::string in, const std::regex regex) 
     {
         std::smatch matches;
-        std::smatch matches2;
-        if(regex_search(in, matches, std::regex(PARAMS_REGEX))) 
+        if(regex_search(in, matches, regex)) 
         {
-            std::string ss = matches.str(2);
-	        while(regex_search(ss, matches2, std::regex(SEPARATE_PARAMS_REGEX))){
-                std::string input = matches2[0];
-                std::stringstream ss2(input);
-
-                std::string output;
-                ss2 >> std::quoted(output);
-
-                e.params.push_back(output);
-                ss = matches2.suffix().str();
-            }
+            std::stringstream ss(matches.str(2));
+	    while(ss.good()) 
+	    { 
+	        std::string it; 
+	        getline(ss, it, ',');
+	        e.params.push_back(it); 
+	    }
         }
   
         return;   
@@ -271,53 +264,15 @@ public:
 	        else 
 	            std::getline(std::cin, input);
     	    e.label = get_event_label(input);
-	        get_event_params(e, input);  
+	        get_event_params(e, input, std::regex(PARAMS_REGEX));  
         }
         else 
         {
             getline(std::cin, input);
             e.label = get_event_label(input);
-            get_event_params(e, input);
+            get_event_params(e, input, std::regex(PARAMS_REGEX));  
         }
      
         return e;
-    }
-};
-/*
-* @brief Manages clock variables.
-*
-*/
-class Timer {
-private:
-        std::time_t time_stamp;
-
-public:
-    //constructor definition
-    Timer(){
-        time_stamp = std::chrono::duration_cast<std::chrono::nanoseconds>((std::chrono::system_clock::now().time_since_epoch())).count();
-    }
-
-    bool expired(double duration){
-        return (std::chrono::duration_cast<std::chrono::nanoseconds>((std::chrono::system_clock::now().time_since_epoch())).count() >= time_stamp + duration);
-    }
-
-    std::time_t getPassedTime(){
-        return (std::chrono::duration_cast<std::chrono::nanoseconds>((std::chrono::system_clock::now().time_since_epoch())).count() - time_stamp);
-    }
-
-    std::time_t getTimeStamp(){
-        return time_stamp;
-    }
-
-    void reset_clock(){
-        time_stamp = std::chrono::duration_cast<std::chrono::nanoseconds>((std::chrono::system_clock::now().time_since_epoch())).count();
-    }
-
-    void reset_clock(Timer ts){
-        time_stamp = ts.getTimeStamp();
-    }
-
-    void setTimeStamp(){
-
     }
 };

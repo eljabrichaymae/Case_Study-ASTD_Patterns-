@@ -11,6 +11,7 @@ class lof : public model{
     
     private:
         PyObject* pyModel;
+        PyObject* pScaler;
         double meanScores;
         double sdScores;
         double threshold;
@@ -22,6 +23,8 @@ class lof : public model{
         lof(int);
         PyObject* getPyModel();
         void setPyModel(PyObject*);
+        void setPScaler(PyObject*);
+        PyObject* getPScaler();
         double getMeanScores();
         void setMeanScores(double);
         double getSdScores();
@@ -32,8 +35,8 @@ class lof : public model{
         void setNumNeighbors(int);
         std::vector<std::string> getAlerts();
         void setAlerts(std::vector<std::string>);
-        void training(std::vector<int> data);
-        void score_partial(std::string,std::string,std::vector<int>&); 
+        void training(PyObject* result);
+        void detection(std::string,std::string,std::vector<int>&); 
 
 };
 

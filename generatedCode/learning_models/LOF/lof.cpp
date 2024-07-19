@@ -5,15 +5,18 @@
 #include <fstream>
 #include <cstdlib>
 #include "lof.h"
-#include "../../json.hpp"
+#include "../../nlohmann/json.hpp"
 #include <Python.h>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
 
 using json = nlohmann::json;
 using namespace std;
     
     lof::lof(){
         this->pyModel=NULL;
-        this->numNeighbors = 20;
+        this->numNeighbors = 30;
         this->alerts={};
     };
     lof::lof(int numNeighbors){
@@ -24,8 +27,14 @@ using namespace std;
     PyObject* lof::getPyModel(){
         return this->pyModel;
     };
+    PyObject* lof::getPScaler(){
+        return this->pScaler;
+    };
     void lof::setPyModel(PyObject* pyModel){
         this->pyModel = pyModel;
+    };
+    void lof::setPScaler(PyObject* pScaler){
+        this->pScaler = pScaler;
     };
     double lof::getMeanScores(){
         return this->meanScores;
@@ -57,66 +66,121 @@ using namespace std;
     void lof::setAlerts(std::vector<std::string> alerts){
         this->alerts = alerts;
     };
-    void lof::training(std::vector<int> data){
-        PyObject* result = PyList_New(0);
-        for (int i = 0; i < data.size(); i++) {
-            PyList_Append(result, PyLong_FromLong(data[i]));
-        }
-        PyObject *pName, *pModule, *pFunc, *pArgs, *pValue;
-        pName = PyUnicode_FromString((char*)"LOF");
-        //PyObject_Print(pName, stdout, 0);
-        pModule = PyImport_Import(pName);
-        if (pModule == nullptr)
-        {
+   void lof::training(PyObject* result) {
+    PyObject *pName, *pModule, *pFunc, *pArgs, *pValue;
+    pName = PyUnicode_FromString("LOF");
+    if (!pName) {
+        PyErr_Print();
+        std::exit(1);
+    }
+
+    pModule = PyImport_Import(pName);
+    Py_DECREF(pName);  // Décrémentez la référence immédiatement après l'importation
+
+    if (!pModule) {
+        PyErr_Print();
+        std::exit(1);
+    }
+
+    pFunc = PyObject_GetAttrString(pModule, "train");
+    if (!pFunc || !PyCallable_Check(pFunc)) {
+        PyErr_Print();
+        Py_XDECREF(pFunc);  // Utilisez Py_XDECREF pour éviter des erreurs si pFunc est nullptr
+        Py_DECREF(pModule);
+        std::exit(1);
+    }
+
+    pArgs = PyTuple_Pack(2, result, PyLong_FromLong(getNumNeighbors()));
+    if (!pArgs) {
+        PyErr_Print();
+        Py_DECREF(pFunc);
+        Py_DECREF(pModule);
+        std::exit(1);
+    }
+
+    pValue = PyObject_CallObject(pFunc, pArgs);
+    Py_DECREF(pArgs);  // Décrémentez la référence après l'appel de la fonction
+
+    if (!pValue) {
+        PyErr_Print();
+        Py_DECREF(pFunc);
+        Py_DECREF(pModule);
+        std::exit(1);
+    }
+
+    if (PyTuple_Check(pValue) && PyTuple_Size(pValue) == 3) {
+        setPyModel(PyTuple_GetItem(pValue, 0));
+        setPScaler(PyTuple_GetItem(pValue, 1));
+        setThreshold(PyFloat_AsDouble(PyTuple_GetItem(pValue, 2)));
+ 
+    } else {
+        PyErr_SetString(PyExc_ValueError, "Expected a tuple of size 3");
+        PyErr_Print();
+        Py_DECREF(pValue);
+        
+        std::exit(1);
+    }
+
+   
+};
+void lof::detection(std::string eventDate, std::string eventId, std::vector<int>& labels) {
+    if (getPyModel()) {
+         std::tm tm = {};
+
+        // Utiliser std::istringstream pour lire la chaîne de caractères
+        std::istringstream ss(eventDate);
+        ss >> std::get_time(&tm, "%d/%m/%Y %H:%M:%S");
+        std::time_t time = std::mktime(&tm);
+        int value = tm.tm_hour;
+        PyObject *pFunc1, *pArgs1, *pName1, *pModule1, *pValue1;
+        pName1 = PyUnicode_FromString("LOF");
+        if (!pName1) {
             PyErr_Print();
             std::exit(1);
         }
-        //PyObject_Print(pModule, stdout, 0);
-        pFunc = PyObject_GetAttrString(pModule, (char*)"train");
-        pArgs = PyTuple_Pack(2, result,PyLong_FromLong(getNumNeighbors()));
-        pValue = PyObject_CallObject(pFunc, pArgs);
-        setPyModel(pValue);
-        
-        Py_DECREF(pName);
-        Py_DECREF(pModule);
-        Py_DECREF(pFunc);
-        Py_DECREF(pArgs);
-            
-        
 
-    };
-    void lof::score_partial(std::string eventDate,std::string eventId,std::vector<int>& labels){
-        
-        if(getPyModel() != NULL){
-            int heure = stoi(eventDate.substr(12, 2));
-            int minute = stoi(eventDate.substr(15, 2));
-            int value = heure * 60 + minute;
-            PyObject *pFunc,*pArgs,*pName,*pModule;
-            PyObject *pValue = PyTuple_New(1);
-            pName = PyUnicode_FromString((char*)"LOF");
-            pModule = PyImport_Import(pName);
-            pFunc = PyObject_GetAttrString(pModule, (char*)"score");
-            pArgs = PyTuple_Pack(2, getPyModel(),PyLong_FromLong(value));
-            pValue = PyObject_CallObject(pFunc, pArgs);
-            if (pValue == nullptr)
-            {
-                PyErr_Print();
-                std::exit(1);
-            }
-            double score = PyFloat_AsDouble(PyTuple_GetItem(pValue,0));
-            int label = int (PyFloat_AsDouble(PyTuple_GetItem(pValue,1)));
-            if(label == -1){
-                this->alerts.push_back(eventId);
-                labels.push_back(1);
-            }else{
-                labels.push_back(0);
-            }
-            //json j_vec(getAlerts());
-            //std::ofstream o("alertslof.json");
-            Py_DECREF(pName);
-            Py_DECREF(pModule);
-            Py_DECREF(pFunc);
-            Py_DECREF(pArgs);
-      
+        pModule1 = PyImport_Import(pName1);
+        Py_DECREF(pName1);  // Décrémentez la référence immédiatement après l'importation
+
+        if (!pModule1) {
+            PyErr_Print();
+            std::exit(1);
         }
-    }; 
+
+        pFunc1 = PyObject_GetAttrString(pModule1, "score");
+        if (!pFunc1 || !PyCallable_Check(pFunc1)) {
+            PyErr_Print();
+            Py_XDECREF(pFunc1);
+            Py_DECREF(pModule1);
+            std::exit(1);
+        }
+
+        pArgs1 = PyTuple_Pack(4, PyLong_FromLong(value), getPyModel(), getPScaler(), PyFloat_FromDouble(getThreshold()));
+        if (!pArgs1) {
+            PyErr_Print();
+            Py_DECREF(pFunc1);
+            Py_DECREF(pModule1);
+            std::exit(1);
+        }
+
+        pValue1 = PyObject_CallObject(pFunc1, pArgs1);
+        Py_DECREF(pArgs1);  // Décrémentez la référence après l'appel de la fonction
+
+        if (!pValue1) {
+            PyErr_Print();
+            Py_DECREF(pFunc1);
+            Py_DECREF(pModule1);
+            std::exit(1);
+        }
+
+        int label = static_cast<int>(PyFloat_AsDouble(pValue1));
+        labels.push_back(label);
+
+        Py_DECREF(pValue1);
+        Py_DECREF(pFunc1);
+        Py_DECREF(pModule1);
+    }
+}
+
+
+

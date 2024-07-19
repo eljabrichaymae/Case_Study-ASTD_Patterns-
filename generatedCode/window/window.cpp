@@ -4,18 +4,12 @@
 #include <iterator>
 #include <memory>
 #include "window.h"
+#include <Python.h>
 
 
 using namespace std;
 
-window1::window1(){
-    this->window_size = 100;
-    this->sliding_size = 50;
-    this->num_training = 0;
-    this->is_training_on = false;
-    this->seen_instances = 0;
-    this->type = "instance";
-};
+
 window1::window1(json&  window_parameters){
     this->window_size = window_parameters["window_size"].get<int>();
     this->sliding_size = window_parameters["sliding_size"].get<int>();
@@ -59,6 +53,7 @@ void window1::setSeen_periods(vector<int> seen_periods){
 };
 
 vector<int> window1::add_period(int period){
+    //cout<<"add"<<endl;
     if(this->is_training_on){
         this->num_training++;
         this->is_training_on = false;
@@ -66,9 +61,18 @@ vector<int> window1::add_period(int period){
     vector<int> periods_to_delete;
     if(find(this->seen_periods.begin(),this->seen_periods.end(),period)==this->seen_periods.end() &&
         find(this->ref_periods.begin(),this->ref_periods.end(),period)==this->ref_periods.end()){
+        //cout<<period<<endl;
         this->seen_periods.push_back(period);
-        
-        if((this->seen_periods.size() - getWindow_size() - 1) % getSliding_size()== 0){
+        if(this->getSliding_size()==0){
+        if(this->seen_periods.size() == getWindow_size()){
+            int index = max(0, (int) this->seen_periods.size()- 1 - getWindow_size());
+            int index1 = max(0,(int)  index - getSliding_size());
+            periods_to_delete = vector<int>(this->seen_periods.begin() + index1, this->seen_periods.begin() + index);
+            this->ref_periods = vector <int>(this->seen_periods.begin() + index  , this->seen_periods.end() - 1);
+            this->is_training_on = true;
+        }
+        }
+        else if((this->seen_periods.size() - getWindow_size() - 1) % getSliding_size()== 0){
             int index = max(0, (int) this->seen_periods.size()- 1 - getWindow_size());
             int index1 = max(0,(int)  index - getSliding_size());
             periods_to_delete = vector<int>(this->seen_periods.begin() + index1, this->seen_periods.begin() + index);
@@ -76,6 +80,7 @@ vector<int> window1::add_period(int period){
             if(this->ref_periods.size() == getWindow_size()){
                 this->is_training_on = true;
             } 
+            
         }
         
     }
@@ -107,15 +112,27 @@ int window1::add_instance(int value){
 
 void window1::fit_partial(model* m, std::map<int,vector<int>> data_map){
     if(this->is_training_on){   
+        //cout<<"training"<<endl;
         if(this->type == "week"|| this->type == "day"){
             vector<int> data;
             for(int p : this->ref_periods){
                 data.insert(data.end(),data_map[p].begin(),data_map[p].end());
             }
-            m->training(data);  
+            PyObject* result = PyList_New(0);
+            for (int i = 0; i < data.size(); i++) {
+                 PyList_Append(result, PyLong_FromLong(data[i]));
+             }
+         
+            m->training(result);  
         } 
         if(this->type == "instance"){
-            m->training(vector<int>(data_map[0].begin(),data_map[0].end()));
+            vector<int> dataInst = vector<int>(data_map[0].begin(),data_map[0].end());
+             PyObject* result = PyList_New(0);
+             for (int i = 0; i < dataInst.size(); i++) {
+                PyList_Append(result, PyLong_FromLong(dataInst[i]));
+            }
+            //cout<<dataInst.size()<<endl;
+            m->training(result);
         }
         
     }

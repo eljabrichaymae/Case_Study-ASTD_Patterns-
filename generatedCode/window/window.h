@@ -6,7 +6,7 @@
 #include <memory>
 #include <map>
 #include "../learning_models/model.h"
-#include "../json.hpp"
+#include "../nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
